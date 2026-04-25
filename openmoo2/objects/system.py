@@ -7,13 +7,16 @@ class StarSystem(object):
     _systems = set()
     max_planets = 5
 
-    def __init__(self, name, color):
+    def __init__(self, name, color, x=None, y=None):
         """Initialize star system."""
         self.color = color
         self.__name = None
         self.name = name
         self.__planets = {}
         self.__administrator = None
+        self.x = x
+        self.y = y
+        self.special = None
 
     @property
     def planets(self):
