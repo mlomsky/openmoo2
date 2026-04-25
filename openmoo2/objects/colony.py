@@ -39,6 +39,8 @@ class Colony:
     """
     A colony on a planet.
 
+    kind = 'colony' satisfies the Planet.colony setter's type check.
+
     Population is divided into farmers, workers, and scientists.
     Call process_turn() each game turn to advance growth and cache outputs.
 
@@ -48,6 +50,8 @@ class Colony:
       growth_increment = (a * b) / 100
     A new colonist appears when _growth_reserve reaches 1000.
     """
+
+    kind = 'colony'   # satisfies Planet.colony type check
 
     def __init__(self, planet, race, name='Colony'):
         if planet.kind != 'planet':

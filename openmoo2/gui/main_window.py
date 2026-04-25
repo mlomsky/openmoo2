@@ -9,6 +9,7 @@ from .colors import (
     C_SELECTED, C_HOVER, C_ORION,
     STAR_COLOR, STAR_HIGHLIGHT, STAR_RADIUS, EMPIRE_COLOR,
 )
+from openmoo2.objects.colonization import can_colonize, best_planet, colonize
 
 # ── Layout ────────────────────────────────────────────────────────────────
 _W, _H        = 1100, 720
@@ -79,6 +80,7 @@ class MainWindow:
         self.hovered         = None    # hovered StarSystem
         self.selected_ship   = None    # Ship awaiting move order
         self._last_arrivals  = []      # ships that arrived last turn (for brief highlight)
+        self._colonize_btn   = None    # Rect of Colonize button (set each draw)
 
         self._map_rect = pygame.Rect(
             _MAP_PAD, _MAP_PAD,
@@ -132,6 +134,8 @@ class MainWindow:
                 if mx >= _MAP_W:                        # panel click
                     if self._btn.collidepoint(ev.pos):
                         self._end_turn()
+                    elif self._colonize_btn and self._colonize_btn.collidepoint(ev.pos):
+                        self._do_colonize()
                 else:                                   # map click
                     self._handle_map_click(mx, my)
 
@@ -156,6 +160,15 @@ class MainWindow:
     def _end_turn(self):
         result = self.turns.process_turn()
         self._last_arrivals = result.arrivals.get(self.player, [])
+
+    def _do_colonize(self):
+        """Colonize the best available planet in the selected system."""
+        system = self.selected
+        if system is None or not can_colonize(self.player, system):
+            return
+        planet = best_planet(self.player, system)
+        if planet:
+            colonize(self.player, system, planet)
 
     # ── Coordinate helpers ─────────────────────────────────────────────────
 
@@ -364,9 +377,26 @@ class MainWindow:
         else:
             y = self._txt(x, y, 'Click a star to inspect', fnt['sm'], C_SUBTEXT)
 
-        # End Turn button
+        # ── Colonize button (shown when opportunity exists) ──────────────
+        mx, my = pygame.mouse.get_pos()
+        system = self.selected or self.hovered
+        if system and can_colonize(self.player, system):
+            planet = best_planet(self.player, system)
+            env    = planet.environment.title() if planet else '?'
+            self._colonize_btn = pygame.Rect(_PANEL_X + 10, _H - 105, _PANEL_W - 20, 40)
+            c_bc = C_BTN_HOVER if self._colonize_btn.collidepoint(mx, my) else (20, 55, 30)
+            pygame.draw.rect(surf, c_bc, self._colonize_btn, border_radius=5)
+            pygame.draw.rect(surf, (50, 160, 70), self._colonize_btn, 1, border_radius=5)
+            c_lbl = fnt['lg'].render(f'Colonize  [{env}]', True, (120, 240, 130))
+            surf.blit(c_lbl, (
+                self._colonize_btn.centerx - c_lbl.get_width() // 2,
+                self._colonize_btn.centery - c_lbl.get_height() // 2,
+            ))
+        else:
+            self._colonize_btn = None
+
+        # ── End Turn button ──────────────────────────────────────────
         self._btn = pygame.Rect(_PANEL_X + 10, _H - 55, _PANEL_W - 20, 40)
-        mx, my  = pygame.mouse.get_pos()
         bc      = C_BTN_HOVER if self._btn.collidepoint(mx, my) else C_BTN
         pygame.draw.rect(surf, bc, self._btn, border_radius=5)
         pygame.draw.rect(surf, C_PANEL_BORDER, self._btn, 1, border_radius=5)

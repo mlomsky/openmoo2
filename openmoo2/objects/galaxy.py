@@ -246,6 +246,7 @@ class Galaxy:
             colony = Colony(hw_planet, empire.race, name=system.name)
             colony.set_population(farmers=1, workers=1, scientists=1)
             empire.colonies.append(colony)
+            hw_planet.colony = colony   # mark planet as occupied
 
             # Starting fleet: one scout and one colony ship
             empire.ships.append(Ship('scout',       empire, system))

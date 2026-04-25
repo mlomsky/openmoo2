@@ -33,20 +33,18 @@ class TurnManager:
     def __init__(self):
         self.turn = 0
         self._empires = []
-        self._colonies = {}   # empire → [Colony, ...]
 
     def register_empire(self, empire):
         """Add an empire to the turn order."""
         if empire in self._empires:
             raise ValueError(f'Empire {empire!r} already registered')
         self._empires.append(empire)
-        self._colonies[empire] = list(empire.colonies)
 
     def add_colony(self, empire, colony):
         """Add a colony to an already-registered empire mid-game."""
         if empire not in self._empires:
             raise ValueError(f'Empire {empire!r} not registered')
-        self._colonies[empire].append(colony)
+        empire.colonies.append(colony)
 
     def process_turn(self):
         """Advance the game by one turn and return a TurnResult."""
@@ -54,9 +52,9 @@ class TurnManager:
         result = TurnResult(self.turn)
 
         for empire in self._empires:
-            # Colonies
+            # Colonies — read from empire.colonies so mid-game additions are live
             reports = []
-            for colony in self._colonies.get(empire, []):
+            for colony in empire.colonies:
                 report = colony.process_turn()
                 empire.treasury += report['bc']
                 empire.research_accumulated += report['research']
