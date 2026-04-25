@@ -6,8 +6,8 @@ class TurnResult:
 
     def __init__(self, turn_number):
         self.turn_number = turn_number
-        # empire → list of colony report dicts
-        self.colony_reports = {}
+        self.colony_reports = {}   # empire → [colony report dict, ...]
+        self.arrivals = {}         # empire → [Ship, ...]  (ships that arrived this turn)
 
     def total_research(self, empire):
         return sum(r['research'] for r in self.colony_reports.get(empire, []))
@@ -54,6 +54,7 @@ class TurnManager:
         result = TurnResult(self.turn)
 
         for empire in self._empires:
+            # Colonies
             reports = []
             for colony in self._colonies.get(empire, []):
                 report = colony.process_turn()
@@ -61,6 +62,14 @@ class TurnManager:
                 empire.research_accumulated += report['research']
                 reports.append(report)
             result.colony_reports[empire] = reports
+
+            # Ships
+            arrived = []
+            for ship in empire.ships:
+                if ship.advance_turn():
+                    arrived.append(ship)
+                    empire.explored_systems.add(ship.location.name)
+            result.arrivals[empire] = arrived
 
         return result
 

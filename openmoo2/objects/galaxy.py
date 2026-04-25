@@ -5,6 +5,7 @@ import random
 
 from .colony import Colony
 from .planet import Planet
+from .ship import Ship
 from .system import StarSystem
 
 # Homeworld planet properties by flag
@@ -245,6 +246,10 @@ class Galaxy:
             colony = Colony(hw_planet, empire.race, name=system.name)
             colony.set_population(farmers=1, workers=1, scientists=1)
             empire.colonies.append(colony)
+
+            # Starting fleet: one scout and one colony ship
+            empire.ships.append(Ship('scout',       empire, system))
+            empire.ships.append(Ship('colony_ship', empire, system))
 
     def _spread_systems(self, candidates, count):
         """

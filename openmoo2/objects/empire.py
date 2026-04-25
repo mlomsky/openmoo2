@@ -47,6 +47,7 @@ class Empire:
         self.research_accumulated = 0
         self.explored_systems = set()
         self.colonies = []
+        self.ships = []
 
     def __repr__(self):
         return (
