@@ -6,6 +6,15 @@ import random
 from .planet import Planet
 from .system import StarSystem
 
+# Homeworld planet properties by flag
+_HW_SIZE_DEFAULT = 'large'
+_HW_SIZE_LARGE = 'huge'
+_HW_ENV_DEFAULT = 'terran'
+_HW_ENV_AQUATIC = 'ocean'
+_HW_MINERAL_DEFAULT = 'average'
+_HW_MINERAL_RICH = 'rich'
+_HW_ORGANIC_DEFAULT = 'rich'    # terran worlds have rich biology
+
 
 # Star class: (spawn_weight, min_planets, max_planets, possible_environments)
 _STAR_CONFIGS = {
@@ -192,3 +201,98 @@ class Galaxy:
             return
         orion = min(candidates, key=lambda s: math.hypot(s.x - cx, s.y - cy))
         orion.special = 'orion'
+
+    # ------------------------------------------------------------------
+    # Empire / homeworld placement
+    # ------------------------------------------------------------------
+
+    def place_empires(self, empires):
+        """
+        Assign a homeworld system to each Empire and prepare its homeworld planet.
+
+        empires -- list of Empire objects (length must equal num_players)
+
+        Raises ValueError if empire count doesn't match or no suitable systems exist.
+        """
+        if len(empires) != self.num_players:
+            raise ValueError(
+                f'Expected {self.num_players} empires, got {len(empires)}'
+            )
+        if not self.systems:
+            raise RuntimeError('generate() must be called before place_empires()')
+
+        candidates = [
+            s for s in self.systems
+            if s.color not in ('black',) and s.special != 'orion'
+        ]
+        if len(candidates) < len(empires):
+            raise ValueError(
+                f'Not enough candidate systems ({len(candidates)}) '
+                f'for {len(empires)} empires'
+            )
+
+        chosen = self._spread_systems(candidates, len(empires))
+
+        for empire, system in zip(empires, chosen):
+            hw_planet = self._make_homeworld_planet(empire.race)
+            self._install_homeworld(system, hw_planet)
+            system.special = 'homeworld'
+            empire.homeworld = system
+            empire.homeworld_planet = hw_planet
+            empire.explored_systems.add(system.name)
+
+    def _spread_systems(self, candidates, count):
+        """
+        Pick `count` systems from candidates that are maximally spread apart.
+        Uses greedy max-min distance selection.
+        """
+        first = random.choice(candidates)
+        chosen = [first]
+        remaining = [s for s in candidates if s is not first]
+
+        while len(chosen) < count:
+            best = max(
+                remaining,
+                key=lambda s: min(math.hypot(s.x - c.x, s.y - c.y) for c in chosen)
+            )
+            chosen.append(best)
+            remaining.remove(best)
+
+        return chosen
+
+    def _make_homeworld_planet(self, race):
+        """Create a homeworld Planet tailored to the race's traits."""
+        size = _HW_SIZE_LARGE if race.large_homeworld else _HW_SIZE_DEFAULT
+        env = _HW_ENV_AQUATIC if race.aquatic else _HW_ENV_DEFAULT
+        mineral = _HW_MINERAL_RICH if race.rich_homeworld else _HW_MINERAL_DEFAULT
+        return Planet(
+            'planet',
+            size=size,
+            environment=env,
+            mineral=mineral,
+            organic=_HW_ORGANIC_DEFAULT,
+            special='homeworld',
+        )
+
+    def _install_homeworld(self, system, hw_planet):
+        """
+        Put the homeworld planet into the system.
+        Replaces the first regular planet slot if one exists, otherwise
+        replaces the first slot (any kind), or adds to an empty system.
+        """
+        planets = system.planets  # {pos: planet or None}
+
+        # Prefer replacing an existing 'planet' type slot
+        for pos, p in planets.items():
+            if p is not None and p.kind == 'planet':
+                system.replace_planet(pos, hw_planet)
+                return
+
+        # Fall back to first non-None slot
+        for pos, p in planets.items():
+            if p is not None:
+                system.replace_planet(pos, hw_planet)
+                return
+
+        # System is empty — add a fresh slot
+        system.planets = hw_planet

@@ -38,6 +38,14 @@ class StarSystem(object):
     def planets(self):
         pass
 
+    def replace_planet(self, position, planet):
+        """Replace the planet at the given slot (1-based). Slot must already exist."""
+        if self.color == 'black':
+            raise Exception
+        if position not in self.__planets:
+            raise KeyError(f'No planet at position {position}')
+        self.__planets[position] = planet
+
     @property
     def administrator(self):
         return self.__administrator
