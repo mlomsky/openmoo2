@@ -3,6 +3,7 @@
 import math
 import random
 
+from .colony import Colony
 from .planet import Planet
 from .system import StarSystem
 
@@ -240,6 +241,10 @@ class Galaxy:
             empire.homeworld = system
             empire.homeworld_planet = hw_planet
             empire.explored_systems.add(system.name)
+
+            colony = Colony(hw_planet, empire.race, name=system.name)
+            colony.set_population(farmers=1, workers=1, scientists=1)
+            empire.colonies.append(colony)
 
     def _spread_systems(self, candidates, count):
         """

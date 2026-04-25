@@ -44,7 +44,9 @@ class Empire:
         self.homeworld = None
         self.homeworld_planet = None
         self.treasury = 0
+        self.research_accumulated = 0
         self.explored_systems = set()
+        self.colonies = []
 
     def __repr__(self):
         return (

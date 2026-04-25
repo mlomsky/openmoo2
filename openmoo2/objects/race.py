@@ -89,11 +89,11 @@ CANONICAL_RACES = {
     ),
     'Sakkra': Race(
         'Sakkra', government='dictatorship',
-        population=1, farming=1, subterranean=True,
+        population=100, farming=1, subterranean=True,  # +100 growth bonus (double rate)
     ),
     'Silicoid': Race(
         'Silicoid', government='feudal',
-        lithovore=True, tolerant=True, population=-1,
+        lithovore=True, tolerant=True, population=-20,  # slow-growing rock creatures
     ),
     'Trilarian': Race(
         'Trilarian', government='democracy',
